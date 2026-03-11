@@ -40,6 +40,8 @@ Authorization: Bearer $RACCOON_API_TOKEN
 
 ## 一、数据分析接口
 
+**重要约束：** 对话分析接口生成的所有文件统一保存到 `raccoon/dataanalysis/` 目录下，不得修改此路径。
+
 ### 数据分析对话
 
 创建数据分析模型响应，支持流式输出。

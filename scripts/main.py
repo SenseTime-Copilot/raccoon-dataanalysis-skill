@@ -42,7 +42,7 @@ class RaccoonClient:
         self.token = token or os.environ.get("RACCOON_API_TOKEN", "")
         if not self.host:
             print("错误: 未设置 RACCOON_API_HOST 环境变量")
-            print("请运行: export RACCOON_API_HOST='https://code.xiaohuanxiong.com'")
+            print("请运行: export RACCOON_API_HOST='https://xiaohuanxiong.com'")
             sys.exit(1)
         if not self.token:
             print("错误: 未设置 RACCOON_API_TOKEN 环境变量")
@@ -229,8 +229,8 @@ class RaccoonClient:
         return result
 
     def data_analysis(self, content, model="SenseChat-Code-DataAnalysis-Excel",
-                      temperature=0.5, retries=None):
-        """无状态数据分析，返回 ChatResult"""
+                      temperature=0.5, retries=None, output_dir="./raccoon/dataanalysis"):
+        """无状态数据分析，返回 ChatResult，生成的文件统一保存到 raccoon/dataanalysis 目录"""
         retries = retries if retries is not None else self.MAX_RETRIES
         data = {
             "model": model,
@@ -242,10 +242,17 @@ class RaccoonClient:
             "messages": [{"role": "user", "type": "text", "content": content}],
         }
 
+        # 确保输出目录存在
+        os.makedirs(output_dir, exist_ok=True)
+
         last_error = None
         for attempt in range(retries + 1):
             try:
-                return self._stream_data_analysis(data)
+                result = self._stream_data_analysis(data)
+                # 对于数据分析接口，将生成的代码保存到统一目录
+                if result.code:
+                    self._save_data_analysis_files(result, output_dir)
+                return result
             except (RetryableError, requests.exceptions.ConnectionError, requests.exceptions.Timeout) as e:
                 last_error = e
                 if attempt < retries:
@@ -253,6 +260,22 @@ class RaccoonClient:
                     print(f"[重试 {attempt+1}/{retries}] {e} - 等待 {delay}s...", file=sys.stderr)
                     time.sleep(delay)
         raise last_error
+
+    def _save_data_analysis_files(self, result, output_dir):
+        """保存数据分析生成的代码文件到指定目录"""
+        if not result.code:
+            return
+
+        timestamp = int(time.time())
+        for i, code in enumerate(result.code, 1):
+            filename = f"analysis_{timestamp}_{i}.py"
+            filepath = os.path.join(output_dir, filename)
+            try:
+                with open(filepath, "w", encoding="utf-8") as f:
+                    f.write(code)
+                print(f"  已保存代码: {filepath}")
+            except Exception as e:
+                print(f"  保存代码失败: {filename} - {e}", file=sys.stderr)
 
     def _stream_data_analysis(self, data):
         url = f"{self.host}/api/open/llm/v1/data-analysis/chat-completions"
@@ -316,7 +339,7 @@ class RaccoonClient:
         data = self._request("GET", f"/api/open/office/v2/sessions/{session_id}/artifacts")
         return data.get("artifacts", [])
 
-    def download_artifacts(self, session_id, output_dir="./output"):
+    def download_artifacts(self, session_id, output_dir="./raccoon/dataanalysis"):
         """下载所有生成物到本地，返回文件路径列表"""
         artifacts = self.get_artifacts(session_id)
         if not artifacts:
@@ -433,7 +456,7 @@ def check_environment():
 
     if not host:
         print("错误: 未设置 RACCOON_API_HOST 环境变量", file=sys.stderr)
-        print("请运行: export RACCOON_API_HOST='https://code.xiaohuanxiong.com'", file=sys.stderr)
+        print("请运行: export RACCOON_API_HOST='https://xiaohuanxiong.com'", file=sys.stderr)
         return False
     if not token:
         print("错误: 未设置 RACCOON_API_TOKEN 环境变量", file=sys.stderr)
@@ -473,6 +496,27 @@ def cmd_analyze(args):
     try:
         client = RaccoonClient()
 
+        # 如果没有文件，使用无状态数据分析接口，并将结果保存到raccoon/dataanalysis目录
+        if not args.file:
+            print(f"[1/2] 发起数据分析: {args.prompt}")
+            print("-" * 60)
+            # 使用数据分析接口，强制使用raccoon/dataanalysis目录
+            result = client.data_analysis(args.prompt, output_dir="./raccoon/dataanalysis")
+
+            print("-" * 60)
+            print(f"[分析完成] {result.summary()}")
+
+            if args.show_code and result.code:
+                print("\n--- 生成的代码 ---")
+                for i, code in enumerate(result.code, 1):
+                    print(f"\n# 代码段 {i}:")
+                    print(code)
+
+            print(f"\n[2/2] 代码已保存到: ./raccoon/dataanalysis/")
+            print("完成! 对话分析接口生成的文件已统一保存到raccoon/dataanalysis目录")
+            return
+
+        # 有文件的情况，使用原有的办公解释器流程
         session_name = args.session_name or f"分析: {os.path.basename(args.file) if args.file else args.prompt[:20]}"
         print(f"[1/5] 创建会话: {session_name}")
         session = client.create_session(session_name)
@@ -480,19 +524,16 @@ def cmd_analyze(args):
         print(f"      会话ID: {session_id}")
 
         upload_file_ids = []
-        if args.file:
-            print(f"[2/5] 上传文件: {args.file}")
-            file_id = client.upload_temp_file(args.file)
-            upload_file_ids = [file_id]
-            print(f"      文件ID: {file_id}")
-        else:
-            print("[2/5] 跳过文件上传（纯对话模式）")
+        print(f"[2/5] 上传文件: {args.file}")
+        file_id = client.upload_temp_file(args.file)
+        upload_file_ids = [file_id]
+        print(f"      文件ID: {file_id}")
 
         print(f"[3/5] 发起对话: {args.prompt}")
         print("-" * 60)
         result = client.chat(
             session_id, args.prompt,
-            upload_file_ids=upload_file_ids if upload_file_ids else None,
+            upload_file_ids=upload_file_ids,
         )
 
         print("-" * 60)
@@ -512,9 +553,11 @@ def cmd_analyze(args):
 
         if not args.no_download:
             print(f"\n[4/5] 获取生成物...")
-            downloaded = client.download_artifacts(session_id, output_dir=args.output)
+            # 统一使用 raccoon/dataanalysis 目录
+            output_dir = "./raccoon/dataanalysis"
+            downloaded = client.download_artifacts(session_id, output_dir=output_dir)
             if downloaded:
-                print(f"      共下载 {len(downloaded)} 个文件到 {args.output}/")
+                print(f"      共下载 {len(downloaded)} 个文件到 {output_dir}/")
                 if not args.no_open:
                     images = [p for p in downloaded if p.lower().endswith(('.png', '.jpg', '.jpeg', '.svg', '.gif'))]
                     if images:
@@ -558,7 +601,7 @@ def cmd_auth_check(args):
 
     if not host:
         print("错误: 未设置 RACCOON_API_HOST 环境变量")
-        print("请运行: export RACCOON_API_HOST='https://code.xiaohuanxiong.com'")
+        print("请运行: export RACCOON_API_HOST='https://xiaohuanxiong.com'")
         sys.exit(1)
     if not token:
         print("错误: 未设置 RACCOON_API_TOKEN 环境变量")
@@ -823,7 +866,7 @@ def main():
     analyze_parser = subparsers.add_parser("analyze", help="分析文件或进行对话")
     analyze_parser.add_argument("--file", "-f", help="待分析的文件路径")
     analyze_parser.add_argument("--prompt", "-p", required=True, help="分析需求描述")
-    analyze_parser.add_argument("--output", "-o", default="./output", help="生成物输出目录")
+    analyze_parser.add_argument("--output", "-o", default="./raccoon/dataanalysis", help="生成物输出目录（已固定为 ./raccoon/dataanalysis）")
     analyze_parser.add_argument("--session-name", help="会话名称")
     analyze_parser.add_argument("--no-download", action="store_true", help="不下载生成物")
     analyze_parser.add_argument("--no-open", action="store_true", help="不自动打开生成的图片")
