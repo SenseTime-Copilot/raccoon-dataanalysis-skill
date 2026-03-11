@@ -8,31 +8,6 @@ Authorization: Bearer $RACCOON_API_TOKEN
 
 ## 数据分析接口
 
-| 操作 | 方法 | 路径 | 关键参数 |
-|------|------|------|---------|
-| 数据分析对话 | POST | `/api/open/llm/v1/data-analysis/chat-completions` | model, messages[], stream=true |
-
-### messages 结构
-
-| role | 可用 type | 说明 |
-|------|-----------|------|
-| system | text | 系统提示 |
-| user | text, file, description | 用户输入/文件/文件摘要 |
-| assistant | text, code, execution, summary | 模型回复/代码/执行结果/总结 |
-
-### finish_reason 快查
-
-| 值 | 动作 |
-|----|------|
-| text | 继续请求 |
-| code | 执行代码后拼接结果继续 |
-| stop | 结束 |
-| length / sensitive / context | 异常结束 |
-
----
-
-## 办公解释器接口
-
 ### 会话管理
 
 | 操作 | 方法 | 路径 |

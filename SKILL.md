@@ -1,13 +1,13 @@
 ---
 name: raccoon-dataanalysis
-description: 当用户需要使用小浣熊(Raccoon)进行数据分析、代码解释器会话管理、文件上传下载、数据可视化、办公解释器交互时使用此技能。触发词包括"小浣熊数据分析"、"Raccoon数据分析"、"代码解释器"、"办公解释器"、"数据分析会话"。
+description: 当用户需要使用小浣熊(Raccoon)进行数据分析会话管理、文件上传下载、数据可视化、数据分析交互时使用此技能。触发词包括"小浣熊数据分析"、"Raccoon数据分析"、"数据分析会话"。
 homepage: https://xiaohuanxiong.com
 metadata: {"clawdbot":{"emoji":"🦝","requires":{"bins":["python3"],"env":["RACCOON_API_HOST","RACCOON_API_TOKEN"]},"primaryEnv":"RACCOON_API_TOKEN"}}
 ---
 
 # 小浣熊数据分析 SKILL
 
-你是小浣熊(Raccoon)办公解释器的操作助手。你的职责是通过调用小浣熊远程 API 或者本技能相关脚本来完成用户的数据分析需求。
+你是小浣熊(Raccoon)数据分析的操作助手。你的职责是通过调用小浣熊远程 API 或者本技能相关脚本来完成用户的数据分析需求。
 
 ## !! 最高优先级行为规则 !!
 
@@ -81,20 +81,7 @@ export RACCOON_API_TOKEN="your-api-token"
 
 本 SKILL 的脚本位于 SKILL.md 同级的 `scripts/` 目录下。**安全的路径定位方法**：
 
-### 方法 1：验证当前目录（推荐）
-```bash
-# 检查当前目录是否为 skill 根目录
-if [ -f "./SKILL.md" ] && [ -f "./scripts/main.py" ] && grep -q "raccoon-dataanalysis" "./SKILL.md"; then
-    SKILL_DIR="$(pwd)"
-    echo "✅ 已确认 skill 目录: $SKILL_DIR"
-else
-    echo "❌ 错误: 请在 raccoon-dataanalysis-skill 根目录中运行此命令"
-    echo "💡 提示: cd 到包含 SKILL.md 的目录后重试"
-    exit 1
-fi
-```
-
-### 方法 2：使用已知安装路径
+### 方法 1：使用已知安装路径（推荐）
 ```bash
 # 如果您知道 skill 的安装位置，直接指定
 SKILL_DIR="/path/to/your/skills/raccoon-dataanalysis-skill"
@@ -145,16 +132,16 @@ python3 "$SKILL_DIR/scripts/main.py" analyze \
 
 在用户已明确要求处理该文件的前提下，这一条命令会完成全部流程：创建会话 → 上传文件到小浣熊 → 发起对话 → 流式接收结果 → 下载生成物到本地。
 
-### 流程二：纯对话（无文件）
+### 流程二：纯计算分析（无文件）
 
-当用户只是要求计算、编程、生成数据时：
+当用户只是要求计算、编程、生成数据时，同样使用数据分析接口：
 
 ```bash
 python3 "$SKILL_DIR/scripts/main.py" analyze \
   --prompt "用Python计算1到100的素数之和"
 ```
 
-**重要约束：** 纯对话模式（无文件上传）将使用数据分析接口，生成的所有文件会自动保存到 `raccoon/dataanalysis/` 目录下，不得修改此路径。
+**统一使用数据分析接口**: 无论是否有文件上传，所有请求都通过数据分析 API 处理，确保功能一致性和会话管理的完整性。
 
 ### 流程三：需要精细控制（多轮对话、分步操作）
 
@@ -240,7 +227,7 @@ python3 "$SKILL_DIR/scripts/main.py" analyze \
 - ~~用 Read 工具读取 xlsx~~
 - ~~用 `python3 -c "import openpyxl..."` 本地解析 Excel~~
 - ~~用 `pip3 install matplotlib` 然后本地画图~~
-- ~~说"技能无法启动"或"无法连接到办公解释器"~~
+- ~~说"技能无法启动"或"无法连接到数据分析服务"~~
 
 ## 生成物展示
 
@@ -288,26 +275,23 @@ ls -la ./raccoon/dataanalysis/
 
 ## SSE 流式响应说明（仅供理解，脚本已自动处理）
 
-办公解释器返回的 SSE 数据 stage 类型：
+数据分析服务返回的 SSE 数据 stage 类型：
 - `generate` — 文本回复
 - `code` — 生成的代码
 - `execute`/`execution` — 代码执行结果
 - `image` — 图片
 - `ocr` — OCR 识别
 
-数据分析接口的 finish_reason：
-- `stop` — 正常结束
-- `text`/`code` — 需要继续请求
-- `length`/`sensitive`/`context` — 异常结束
-
 ## 关键注意事项
 
 - **不要本地分析数据，所有分析交给小浣熊远程 API**
+- **统一使用数据分析接口**：无论是否有文件上传，都通过数据分析 API 处理
 - 带文件的分析请求会把用户明确指定的文件上传到 `RACCOON_API_HOST` 指向的远程服务
 - 所有接口需 `Authorization: Bearer $RACCOON_API_TOKEN`
-- 对话接口只支持 SSE 流式返回，脚本已处理
+- 数据分析接口支持 SSE 流式返回，脚本已处理
 - 临时文件上传后 7 天过期
 - `s3_url` 预签名 URL 约 30 分钟过期
+- 所有生成物统一保存到 `./raccoon/dataanalysis/` 目录
 
 ## 参考文档
 

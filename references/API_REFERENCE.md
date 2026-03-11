@@ -40,65 +40,7 @@ Authorization: Bearer $RACCOON_API_TOKEN
 
 ## 一、数据分析接口
 
-**重要约束：** 对话分析接口生成的所有文件统一保存到 `raccoon/dataanalysis/` 目录下，不得修改此路径。
-
-### 数据分析对话
-
-创建数据分析模型响应，支持流式输出。
-
-- **路径**: `POST /api/open/llm/v1/data-analysis/chat-completions`
-- **Content-Type**: `application/json`
-
-#### 请求参数
-
-| 参数 | 类型 | 必须 | 默认值 | 说明 |
-|------|------|------|--------|------|
-| model | string | 是 | - | 模型ID，如 `SenseChat-Code-DataAnalysis-Excel` |
-| messages | object[] | 是 | - | 对话上下文数组 |
-| stream | boolean | 否 | true | 只支持 true |
-| n | int | 否 | 1 | 生成回复数量 [1,4] |
-| max_new_tokens | int | 否 | 自适应 | 最大生成token数 |
-| temperature | float | 否 | 0.5 | 温度 [0.1,2] |
-| top_p | float | 否 | 0.9 | 核采样 (0,1) |
-| repetition_penalty | float | 否 | 1 | 重复惩罚 [1,2]，推荐 [1,1.2] |
-| stop | string[] | 否 | `["<\|endofblock\|>","<\|endofmessage\|>"]` | 停止符 |
-
-#### messages 对象
-
-| 参数 | 类型 | 必须 | 说明 |
-|------|------|------|------|
-| role | string | 是 | `system` / `user` / `assistant` |
-| type | string | 是 | 取决于 role：`system` → `text`；`user` → `text`/`file`/`description`；`assistant` → `text`/`code`/`execution`/`summary` |
-| content | string | 是 | 消息内容 |
-
-#### 响应参数（流式）
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| data.id | string | 消息ID |
-| data.choices[].index | int | 回复序号 |
-| data.choices[].role | string | 角色 |
-| data.choices[].delta | string | 增量内容 |
-| data.choices[].type | string | 内容类型：`text` / `code` |
-| data.choices[].finish_reason | string | 结束原因（见下） |
-| data.usage | object | token用量 |
-
-#### finish_reason 说明
-
-| 值 | 含义 | 处理方式 |
-|----|------|---------|
-| `text` | 触发会话停止符 | 需要继续请求 |
-| `code` | 触发代码停止符 | 需要执行代码后将结果拼接回 messages 继续请求 |
-| `stop` | 正常结束 | 对话结束 |
-| `length` | 达到最大生成长度 | 对话结束 |
-| `sensitive` | 触发敏感词 | 对话结束 |
-| `context` | 触发上下文长度限制 | 对话结束 |
-
----
-
-## 二、办公解释器接口
-
-### 2.1 会话管理
+### 1.1 会话管理
 
 #### 创建会话
 
@@ -157,7 +99,7 @@ Authorization: Bearer $RACCOON_API_TOKEN
 
 ---
 
-### 2.2 对话交互
+### 1.2 对话交互
 
 #### 新增用户对话
 
@@ -220,7 +162,7 @@ Authorization: Bearer $RACCOON_API_TOKEN
 
 ---
 
-### 2.3 文件管理
+### 1.3 文件管理
 
 #### 上传临时文件（推荐）
 
@@ -311,7 +253,7 @@ Authorization: Bearer $RACCOON_API_TOKEN
 
 ---
 
-### 2.4 生成物管理
+### 1.4 生成物管理
 
 #### 获取生成物列表
 
@@ -330,7 +272,7 @@ Authorization: Bearer $RACCOON_API_TOKEN
 
 ---
 
-## 三、错误码参考
+## 二、错误码参考
 
 ### 模块特定错误码
 
