@@ -13,17 +13,12 @@ Authorization: Bearer $RACCOON_API_TOKEN
 | 操作 | 方法 | 路径 |
 |------|------|------|
 | 创建会话 | POST | `/api/open/office/v2/sessions` |
-| 获取会话 | GET | `/api/open/office/v2/sessions/{session_id}` |
-| 会话列表 | GET | `/api/open/office/v2/sessions` |
-| 删除会话 | DELETE | `/api/open/office/v2/sessions/{session_id}` |
 
 ### 对话交互
 
 | 操作 | 方法 | 路径 |
 |------|------|------|
 | 发起对话 | POST | `/api/open/office/v2/sessions/{session_id}/chat/conversations` |
-| 追问建议 | GET | `/api/open/office/v2/sessions/{session_id}/chat/suggestions` |
-| 消息列表 | GET | `/api/open/office/v2/sessions/{session_id}/messages` |
 
 ### 文件管理
 
@@ -34,7 +29,6 @@ Authorization: Bearer $RACCOON_API_TOKEN
 | 文件列表 | GET | `/api/open/office/v2/sessions/files` | - |
 | 文件信息 | GET | `/api/open/office/v2/sessions/{session_id}/file_info?file_path=` | - |
 | 下载文件 | GET | `/api/open/office/v2/sessions/{session_id}/files?file_path=` | - |
-| 删除文件 | DELETE | `/api/open/office/v2/sessions/default_session/{file_id}` | - |
 
 ### 生成物
 
@@ -76,7 +70,7 @@ Authorization: Bearer $RACCOON_API_TOKEN
 | 码 | 含义 | 建议 |
 |----|------|------|
 | 100012 | 会话不存在 | 检查 session_id |
-| 100015 | 沙盒资源不足 | 删除旧会话 |
+| 100015 | 沙盒资源不足 | 联系管理员 |
 | 100023 | 文件不存在 | 检查文件路径/ID |
 | 200103 | 速率超限 | 等待后重试 |
 | 200506 | 当日问题超限 | 次日再试 |

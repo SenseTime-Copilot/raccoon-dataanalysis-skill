@@ -61,42 +61,6 @@ Authorization: Bearer $RACCOON_API_TOKEN
 | last_chatted_at | string | 最后聊天时间 |
 | language | string | 会话语种 |
 
-#### 获取会话信息
-
-- **路径**: `GET /api/open/office/v2/sessions/{session_id}`
-
-| 查询参数 | 类型 | 说明 |
-|----------|------|------|
-| org_user_id | string | 可选，查询其他用户的会话 |
-
-响应同创建会话。
-
-#### 获取会话列表
-
-- **路径**: `GET /api/open/office/v2/sessions`
-
-| 查询参数 | 类型 | 说明 |
-|----------|------|------|
-| omit_empty_title | boolean | 是否忽略空标题会话 |
-| query_title | string | 按标题搜索 |
-| org_user_id | integer | 查询其他用户的会话 |
-| sort | string | 排序：`+created_at` / `-created_at` / `+updated_at` / `-updated_at` |
-
-| 响应参数 | 类型 | 说明 |
-|----------|------|------|
-| sessions | array | 会话列表 |
-| paging | object | 分页信息（limit/offset/total） |
-
-#### 删除会话
-
-- **路径**: `DELETE /api/open/office/v2/sessions/{session_id}`
-
-| 查询参数 | 类型 | 说明 |
-|----------|------|------|
-| org_user_id | string | 可选 |
-
-响应返回被删除会话的信息。
-
 ---
 
 ### 1.2 对话交互
@@ -131,34 +95,6 @@ Authorization: Bearer $RACCOON_API_TOKEN
 | data.turn_id | string | 对话轮次ID |
 | status.code | integer | 状态码 |
 | status.message | string | 状态消息 |
-
-#### 获取追问建议
-
-- **路径**: `GET /api/open/office/v2/sessions/{session_id}/chat/suggestions`
-
-| 响应参数 | 类型 | 说明 |
-|----------|------|------|
-| suggestions | string[] | 建议列表 |
-
-#### 获取消息列表
-
-- **路径**: `GET /api/open/office/v2/sessions/{session_id}/messages`
-
-| 查询参数 | 类型 | 说明 |
-|----------|------|------|
-| paging.limit | integer | 每页条数 [1,100]，默认 20 |
-| paging.offset | integer | 偏移量，默认 0 |
-| org_user_id | integer | 可选 |
-| verbose | boolean | 是否返回详细信息 |
-
-| 响应参数 | 类型 | 说明 |
-|----------|------|------|
-| messages[].role | string | `user`/`assistant`/`system`/`tool` |
-| messages[].turn_id | string | 轮次ID |
-| messages[].contents[].type | string | `text`/`execution`/`code`/`image` |
-| messages[].contents[].content | string | 内容 |
-| messages[].contents[].timestamp | integer | 时间戳 |
-| paging | object | 分页信息 |
 
 ---
 
@@ -246,10 +182,6 @@ Authorization: Bearer $RACCOON_API_TOKEN
 | org_user_id | string | 可选 |
 
 返回 `application/octet-stream` 字节流。
-
-#### 删除临时文件
-
-- **路径**: `DELETE /api/open/office/v2/sessions/default_session/{file_id}`
 
 ---
 

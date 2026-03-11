@@ -9,7 +9,6 @@
     python3 main.py analyze --prompt "计算斐波那契数列"
     python3 main.py auth-check
     python3 main.py example [1|2]
-    python3 main.py sessions --list
 """
 
 import argparse
@@ -79,17 +78,8 @@ class RaccoonClient:
     def create_session(self, name="数据分析会话"):
         return self._request("POST", "/api/open/office/v2/sessions", {"name": name})
 
-    def get_session(self, session_id):
-        return self._request("GET", f"/api/open/office/v2/sessions/{session_id}")
 
-    def list_sessions(self, sort="-updated_at", omit_empty=True):
-        data = self._request("GET", "/api/open/office/v2/sessions", params={
-            "sort": sort, "omit_empty_title": omit_empty,
-        })
-        return data.get("sessions", [])
 
-    def delete_session(self, session_id):
-        return self._request("DELETE", f"/api/open/office/v2/sessions/{session_id}")
 
     def upload_temp_file(self, file_path):
         """上传临时文件，返回 file_id (int)"""
@@ -116,8 +106,6 @@ class RaccoonClient:
         return self._request("GET", f"/api/open/office/v2/sessions/{session_id}/file_info",
                              params={"file_path": file_path})
 
-    def delete_file(self, file_id):
-        return self._request("DELETE", f"/api/open/office/v2/sessions/default_session/{file_id}")
 
     def chat(self, session_id, content, upload_file_ids=None, files=None,
              verbose=True, deep_think=False, temperature=1, retries=None):
@@ -261,21 +249,6 @@ class RaccoonClient:
             except Exception as e:
                 print(f"  下载异常: {filename} - {e}", file=sys.stderr)
         return downloaded
-
-    def get_suggestions(self, session_id):
-        try:
-            data = self._request("GET", f"/api/open/office/v2/sessions/{session_id}/chat/suggestions")
-            return data.get("suggestions", [])
-        except APIError as e:
-            print(f"  获取建议失败 [{e.code}]: {e.message}", file=sys.stderr)
-            return []
-
-    def get_messages(self, session_id, limit=20, offset=0):
-        data = self._request(
-            "GET", f"/api/open/office/v2/sessions/{session_id}/messages",
-            params={"paging.limit": limit, "paging.offset": offset, "verbose": True},
-        )
-        return data.get("messages", [])
 
 
 class ChatResult:
@@ -444,14 +417,6 @@ def cmd_analyze(args):
         else:
             print(f"\n[{4 if args.file else 3}/4] 跳过生成物下载")
 
-        print(f"\n[4/4] 获取追问建议...")
-        suggestions = client.get_suggestions(session_id)
-        if suggestions:
-            for i, s in enumerate(suggestions, 1):
-                print(f"      建议{i}: {s}")
-        else:
-            print("      无追问建议")
-
         print(f"\n完成! 会话ID: {session_id}")
 
     except RetryableError as e:
@@ -513,34 +478,6 @@ def cmd_auth_check(args):
         print(f"验证异常: {e}")
 
     return False
-
-
-# ================================================================
-# 子命令：会话管理
-# ================================================================
-
-def cmd_sessions(args):
-    """会话管理"""
-    if not check_environment():
-        sys.exit(1)
-
-    try:
-        client = RaccoonClient()
-
-        if args.list:
-            sessions = client.list_sessions()
-            print(f"会话总数: {len(sessions)}")
-            for s in sessions[:10]:
-                print(f"  ID: {s['id']}, 标题: {s.get('title', '无标题')}, 更新: {s.get('updated_at', '')}")
-
-        elif args.delete:
-            print(f"删除会话: {args.delete}")
-            client.delete_session(args.delete)
-            print("删除成功")
-
-    except APIError as e:
-        print(f"API 错误: {e}", file=sys.stderr)
-        sys.exit(1)
 
 
 # ================================================================
@@ -649,33 +586,6 @@ def example_data_analysis_flow():
     print(f"\n会话ID: {session_id}")
 
 
-def example_session_management():
-    """会话管理示例"""
-    print("=" * 60)
-    print("示例3: 会话管理")
-    print("=" * 60)
-
-    host = os.environ.get("RACCOON_API_HOST", "")
-    token = os.environ.get("RACCOON_API_TOKEN", "")
-    headers = {
-        "Content-Type": "application/json",
-        "Authorization": f"Bearer {token}",
-    }
-
-    print("\n[列出会话]")
-    resp = requests.get(
-        f"{host}/api/open/office/v2/sessions",
-        headers=headers,
-        params={"sort": "-updated_at", "omit_empty_title": True},
-        timeout=10,
-    )
-    data = resp.json().get("data", {})
-    sessions = data.get("sessions", [])
-    total = data.get("paging", {}).get("total", len(sessions))
-    print(f"  会话总数: {total}")
-    for s in sessions[:5]:
-        print(f"  ID: {s['id']}, 标题: {s.get('title', '无标题')}, 更新: {s.get('updated_at', '')}")
-
 
 def cmd_example(args):
     """运行使用示例"""
@@ -684,7 +594,6 @@ def cmd_example(args):
 
     examples = {
         "1": ("数据分析完整流程", example_data_analysis_flow),
-        "2": ("会话管理", example_session_management),
     }
 
     if args.example_id and args.example_id in examples:
@@ -719,12 +628,8 @@ def main():
 
     subparsers.add_parser("auth-check", help="检查认证配置")
 
-    sessions_parser = subparsers.add_parser("sessions", help="会话管理")
-    sessions_parser.add_argument("--list", action="store_true", help="列出会话")
-    sessions_parser.add_argument("--delete", help="删除指定会话ID")
-
     example_parser = subparsers.add_parser("example", help="运行使用示例")
-    example_parser.add_argument("example_id", nargs="?", choices=["1", "2", "3"], help="示例编号")
+    example_parser.add_argument("example_id", nargs="?", choices=["1"], help="示例编号")
 
     args = parser.parse_args()
 
@@ -736,8 +641,6 @@ def main():
         cmd_analyze(args)
     elif args.command == "auth-check":
         cmd_auth_check(args)
-    elif args.command == "sessions":
-        cmd_sessions(args)
     elif args.command == "example":
         cmd_example(args)
 

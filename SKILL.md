@@ -177,16 +177,6 @@ for p in downloaded:
 
 ### 流程四：查询已有会话
 
-```bash
-python3 -c "
-import sys
-sys.path.insert(0, '$SKILL_DIR/scripts')
-from main import RaccoonClient
-client = RaccoonClient()
-for s in client.list_sessions()[:10]:
-    print(f\"{s['id']} | {s.get('title', '无标题')}\")
-"
-```
 
 ## 完整的示例对话
 
@@ -248,7 +238,7 @@ ls -la ./raccoon/dataanalysis/
 | 错误码 | 含义 | 处理建议 |
 |--------|------|---------|
 | 100012 | 会话ID不存在 | 重新创建会话 |
-| 100015 | 会话沙盒资源不足 | 删除旧会话后重试 |
+| 100015 | 会话沙盒资源不足 | 联系管理员 |
 | 100016/100017 | 文件数量/大小超限 | 减少文件 |
 | 100023 | 文件不存在 | 确认文件路径 |
 | 200103 | 请求速率超限 | 等待后重试（脚本自动重试） |
@@ -259,10 +249,10 @@ ls -la ./raccoon/dataanalysis/
 
 | 错误 | 处理 |
 |------|------|
-| `context canceled` | 等待 5-10s 后重试，反复出现则删除会话重建 |
+| `context canceled` | 等待 5-10s 后重试，反复出现则重新创建会话 |
 | 执行超时 | 简化任务拆分对话 |
 | `MemoryError` | 减小数据量 |
-| SSE 中途断开 | 通过 messages 接口查询已有结果 |
+| SSE 中途断开 | 重新发起对话 |
 
 脚本已内置自动重试（3次，间隔 5/10/20s）。
 
