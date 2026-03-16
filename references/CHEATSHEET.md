@@ -10,31 +10,31 @@ Authorization: Bearer $RACCOON_API_TOKEN
 
 ### 会话管理
 
-| 操作 | 方法 | 路径 |
-|------|------|------|
+| 操作     | 方法 | 路径                           |
+| -------- | ---- | ------------------------------ |
 | 创建会话 | POST | `/api/open/office/v2/sessions` |
 
 ### 对话交互
 
-| 操作 | 方法 | 路径 |
-|------|------|------|
+| 操作     | 方法 | 路径                                                           |
+| -------- | ---- | -------------------------------------------------------------- |
 | 发起对话 | POST | `/api/open/office/v2/sessions/{session_id}/chat/conversations` |
 
 ### 文件管理
 
-| 操作 | 方法 | 路径 | Content-Type |
-|------|------|------|-------------|
-| 上传临时文件(推荐) | POST | `/api/open/office/v2/sessions/default_session/{batch_id}/files` | multipart/form-data |
-| 上传到会话(废弃中) | POST | `/api/open/office/v2/sessions/{session_id}/files` | multipart/form-data |
-| 文件列表 | GET | `/api/open/office/v2/sessions/files` | - |
-| 文件信息 | GET | `/api/open/office/v2/sessions/{session_id}/file_info?file_path=` | - |
-| 下载文件 | GET | `/api/open/office/v2/sessions/{session_id}/files?file_path=` | - |
+| 操作               | 方法 | 路径                                                             | Content-Type        |
+| ------------------ | ---- | ---------------------------------------------------------------- | ------------------- |
+| 上传临时文件(推荐) | POST | `/api/open/office/v2/sessions/default_session/{batch_id}/files`  | multipart/form-data |
+| 上传到会话(废弃中) | POST | `/api/open/office/v2/sessions/{session_id}/files`                | multipart/form-data |
+| 文件列表           | GET  | `/api/open/office/v2/sessions/files`                             | -                   |
+| 文件信息           | GET  | `/api/open/office/v2/sessions/{session_id}/file_info?file_path=` | -                   |
+| 下载文件           | GET  | `/api/open/office/v2/sessions/{session_id}/files?file_path=`     | -                   |
 
 ### 生成物
 
-| 操作 | 方法 | 路径 |
-|------|------|------|
-| 生成物列表 | GET | `/api/open/office/v2/sessions/{session_id}/artifacts` |
+| 操作       | 方法 | 路径                                                  |
+| ---------- | ---- | ----------------------------------------------------- |
+| 生成物列表 | GET  | `/api/open/office/v2/sessions/{session_id}/artifacts` |
 
 ---
 
@@ -50,31 +50,29 @@ Authorization: Bearer $RACCOON_API_TOKEN
   "files": ["file_id_from_session_upload"],
   "upload_file_id": [123],
   "user_at_commands": {
-    "asset_filters": [
-      {"asset_code": "xxx", "file_uuid": "yyy"}
-    ]
+    "asset_filters": [{ "asset_code": "xxx", "file_uuid": "yyy" }]
   }
 }
 ```
 
 ## 文件传递方式对照
 
-| 上传方式 | 对话时使用的参数 |
-|---------|--------------|
-| 临时文件上传 (default_session) | `upload_file_id: [文件ID]` |
-| 会话文件上传 (session_id) | `files: ["文件ID"]` |
-| 知识库文件 | `user_at_commands.asset_filters` |
+| 上传方式                       | 对话时使用的参数                 |
+| ------------------------------ | -------------------------------- |
+| 临时文件上传 (default_session) | `upload_file_id: [文件ID]`       |
+| 会话文件上传 (session_id)      | `files: ["文件ID"]`              |
+| 知识库文件                     | `user_at_commands.asset_filters` |
 
 ## 常用错误码
 
-| 码 | 含义 | 建议 |
-|----|------|------|
-| 100012 | 会话不存在 | 检查 session_id |
-| 100015 | 沙盒资源不足 | 联系管理员 |
-| 100023 | 文件不存在 | 检查文件路径/ID |
-| 200103 | 速率超限 | 等待后重试 |
-| 200506 | 当日问题超限 | 次日再试 |
-| 300001 | 模型不存在 | 检查 model 值 |
+| 码     | 含义         | 建议            |
+| ------ | ------------ | --------------- |
+| 100012 | 会话不存在   | 检查 session_id |
+| 100015 | 沙盒资源不足 | 联系管理员      |
+| 100023 | 文件不存在   | 检查文件路径/ID |
+| 200103 | 速率超限     | 等待后重试      |
+| 200506 | 当日问题超限 | 次日再试        |
+| 300001 | 模型不存在   | 检查 model 值   |
 
 ## SSE 流式响应解析
 
